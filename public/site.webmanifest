@@ -1,0 +1,11 @@
+{
+  "name": "Taco Fiesta Saranda",
+  "short_name": "Taco Fiesta",
+  "icons": [
+    { "src": "/favicon.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/favicon.png", "sizes": "512x512", "type": "image/png" }
+  ],
+  "theme_color": "#C4532B",
+  "background_color": "#2D1B0E",
+  "display": "browser"
+}

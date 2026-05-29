@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon.png" />
+    <link rel="icon" type="image/png" sizes="192x192" href="/favicon.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/favicon.png" />
+    <link rel="manifest" href="/site.webmanifest" />
+    <meta name="theme-color" content="#C4532B" />
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-1VHTE9RKTB"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      if (localStorage.getItem('cookie_consent') === 'accepted') {
+        gtag('js', new Date());
+        gtag('config', 'G-1VHTE9RKTB');
+      } else {
+        window['ga-disable-G-1VHTE9RKTB'] = true;
+      }
+    </script>
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "Restaurant",
+      "name": "Taco Fiesta Saranda",
+      "servesCuisine": "Mexican",
+      "priceRange": "€€",
+      "telephone": "+355695424532",
+      "email": "tacofiesta@gmail.com",
+      "url": "https://tacofiestasaranda.com",
+      "address": {
+        "@type": "PostalAddress",
+        "streetAddress": "Butrinti Street",
+        "addressLocality": "Saranda",
+        "postalCode": "9701",
+        "addressCountry": "AL"
+      },
+      "openingHoursSpecification": [
+        {
+          "@type": "OpeningHoursSpecification",
+          "dayOfWeek": ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"],
+          "opens": "11:00",
+          "closes": "03:00"
+        }
+      ],
+      "image": "https://mgx-backend-cdn.metadl.com/generate/images/1190170/2026-05-05/n522rdqaafnq/logo-taco-fiesta-transparent.png",
+      "sameAs": ["https://www.instagram.com/tacofiestasarande/"]
+    }
+    </script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>%VITE_APP_TITLE%</title>
+    <meta name="description" content="%VITE_APP_DESCRIPTION%" />
+    <meta name="author" content="Atoms" />
+
+    <meta property="og:title" content="%VITE_APP_TITLE%" />
+    <meta property="og:description" content="%VITE_APP_DESCRIPTION%" />
+    <meta property="og:type" content="website" />
+    <meta property="og:image" content="https://mgx-backend-cdn.metadl.com/generate/images/1190170/2026-05-05/n522rdqaafnq/logo-taco-fiesta-transparent.png" />
+    <meta property="og:site_name" content="Taco Fiesta Saranda" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:image" content="https://mgx-backend-cdn.metadl.com/generate/images/1190170/2026-05-05/n522rdqaafnq/logo-taco-fiesta-transparent.png" />
+  </head>
+
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
