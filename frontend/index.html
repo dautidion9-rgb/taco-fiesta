@@ -2,9 +2,27 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
+    <script>
+      // Start downloading the hero video as soon as the HTML arrives, instead of
+      // waiting for the React bundle or fonts. The Hero component adopts this element.
+      if (location.pathname === '/') {
+        var heroVideo = document.createElement('video');
+        heroVideo.id = 'hero-video';
+        heroVideo.muted = true;
+        heroVideo.defaultMuted = true;
+        heroVideo.setAttribute('muted', '');
+        heroVideo.setAttribute('playsinline', '');
+        heroVideo.autoplay = true;
+        heroVideo.loop = true;
+        heroVideo.preload = 'auto';
+        heroVideo.poster = '/assets/hero-cover.webp';
+        heroVideo.src = '/assets/hero-video.mp4';
+        heroVideo.setAttribute('aria-hidden', 'true');
+        window.heroVideo = heroVideo;
+      }
+    </script>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link rel="preconnect" href="https://www.googletagmanager.com" />
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&display=swap" />
     <link rel="icon" href="/favicon.ico" sizes="any" />
     <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
@@ -13,16 +31,24 @@
     <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
     <link rel="manifest" href="/site.webmanifest" />
     <meta name="theme-color" content="#C4532B" />
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-1VHTE9RKTB"></script>
     <script>
+      // Google Analytics is only downloaded after the visitor accepts cookies.
+      // CookieBanner calls window.loadAnalytics() when they click Accept.
       window.dataLayer = window.dataLayer || [];
       function gtag(){dataLayer.push(arguments);}
-      if (localStorage.getItem('cookie_consent') === 'accepted') {
+      window.loadAnalytics = function () {
+        if (window.analyticsLoaded) return;
+        window.analyticsLoaded = true;
+        var s = document.createElement('script');
+        s.async = true;
+        s.src = 'https://www.googletagmanager.com/gtag/js?id=G-1VHTE9RKTB';
+        document.head.appendChild(s);
         gtag('js', new Date());
         gtag('config', 'G-1VHTE9RKTB');
-      } else {
-        window['ga-disable-G-1VHTE9RKTB'] = true;
-      }
+      };
+      try {
+        if (localStorage.getItem('cookie_consent') === 'accepted') window.loadAnalytics();
+      } catch (e) {}
     </script>
     <script type="application/ld+json">
     {
@@ -62,13 +88,6 @@
           "closes": "01:00"
         }
       ],
-      "aggregateRating": {
-        "@type": "AggregateRating",
-        "ratingValue": "4.9",
-        "reviewCount": "14",
-        "bestRating": "5",
-        "worstRating": "1"
-      },
       "sameAs": [
         "https://www.instagram.com/tacofiestasarande/",
         "https://www.tripadvisor.com/Restaurant_Review-g303165-d33303359-Reviews-Taco_Fiesta-Saranda_Vlore_County.html"
@@ -93,7 +112,7 @@
           "name": "What are Taco Fiesta's opening hours?",
           "acceptedAnswer": {
             "@type": "Answer",
-            "text": "We are open every day from 1:00 AM to 1:00 AM."
+            "text": "We are open every day from 11:00 AM to 1:00 AM."
           }
         },
         {

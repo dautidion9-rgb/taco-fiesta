@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
 import { Menu, X } from 'lucide-react';
 
-const LOGO_IMAGE = 'https://mgx-backend-cdn.metadl.com/generate/images/1190170/2026-05-05/n522rdqaafnq/logo-taco-fiesta-transparent.png';
+const LOGO_IMAGE = '/assets/logo.webp';
 
 const navLinks = [
   { label: 'Home', href: '#home' },

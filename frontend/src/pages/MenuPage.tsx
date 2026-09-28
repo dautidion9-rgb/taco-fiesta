@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { ArrowLeft } from 'lucide-react';
 import Navbar from '@/components/Navbar';
+import Footer from '@/components/Footer';
 import { useSEO } from '@/hooks/useSEO';
 
 interface MenuItem {
@@ -87,6 +88,11 @@ const drinkCategories: { title: string; items: MenuItem[] }[] = [
       { name: 'Pina Colada', description: 'Rum, coconut cream, pineapple juice.', price: '900 L' },
       { name: 'Caipirinha', description: 'Cachaça, lime, sugar.', price: '800 L' },
       { name: 'Vodka Sour', description: 'Vodka, lemon juice, sugar syrup.', price: '900 L' },
+    ],
+  },
+  {
+    title: 'Fresh Drinks',
+    items: [
       { name: 'Lemon', description: 'Fresh lemonade.', price: '500 L' },
       { name: 'Horchata', description: 'Traditional sweet rice milk drink with cinnamon.', price: '450 L' },
       { name: 'Tamarindo', description: 'Sweet and tangy tamarind drink.', price: '450 L' },
@@ -312,6 +318,8 @@ export default function MenuPage() {
           </div>
         </main>
       </div>
+
+      <Footer />
 
       {/* Back to top */}
       <button

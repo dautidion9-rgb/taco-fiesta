@@ -12,10 +12,8 @@ export default function CookieBanner() {
   const accept = () => {
     localStorage.setItem('cookie_consent', 'accepted');
     setVisible(false);
-    // Enable GA now that consent is given
-    (window as any)['ga-disable-G-1VHTE9RKTB'] = false;
-    (window as any).gtag?.('js', new Date());
-    (window as any).gtag?.('config', 'G-1VHTE9RKTB');
+    // Load Google Analytics now that consent is given (defined in index.html)
+    (window as unknown as { loadAnalytics?: () => void }).loadAnalytics?.();
   };
 
   const decline = () => {

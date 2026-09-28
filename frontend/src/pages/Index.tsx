@@ -1,10 +1,11 @@
 import { useState, useEffect, useRef } from 'react';
 import { ChevronDown, ChevronLeft, ChevronRight, ArrowRight, ArrowUpRight, MapPin, Clock, Phone, Sparkles, X } from 'lucide-react';
 import Navbar from '@/components/Navbar';
+import Footer from '@/components/Footer';
 
 const HERO_VIDEO = '/assets/hero-video.mp4';
 const HERO_COVER = '/assets/hero-cover.webp';
-const LOGO_IMAGE = 'https://mgx-backend-cdn.metadl.com/generate/images/1190170/2026-05-05/n522rdqaafnq/logo-taco-fiesta-transparent.png';
+const LOGO_IMAGE = '/assets/logo.webp';
 const RESTAURANT_ENTRANCE = '/assets/restaurant-entrance.webp';
 const FOOD_SPREAD = '/assets/food-spread.webp';
 const INTERIOR_CACTI = '/assets/interior-cacti.webp';
@@ -19,33 +20,57 @@ const timeSlots = [
   '11:00','11:30','12:00','12:30','13:00','13:30','14:00','14:30',
   '15:00','15:30','16:00','16:30','17:00','17:30','18:00','18:30',
   '19:00','19:30','20:00','20:30','21:00','21:30','22:00','22:30',
-  '23:00','23:30','00:00','00:30','01:00','01:30',
+  '23:00','23:30','00:00','00:30',
 ];
 
 /* ───────── HERO ───────── */
 function Hero() {
   const [scrollY, setScrollY] = useState(0);
+  const videoContainerRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     const handleScroll = () => setScrollY(window.scrollY);
     window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
+  // index.html starts loading window.heroVideo before React boots; move that element
+  // into the hero so playback begins immediately. Create one if it's missing.
+  // If the browser still blocks autoplay (e.g. iOS Low Power Mode), start on
+  // first interaction.
+  useEffect(() => {
+    const container = videoContainerRef.current;
+    if (!container) return;
+    let video = (window as unknown as { heroVideo?: HTMLVideoElement }).heroVideo ?? null;
+    if (!video) {
+      video = document.createElement('video');
+      video.id = 'hero-video';
+      video.poster = HERO_COVER;
+      video.src = HERO_VIDEO;
+    }
+    video.muted = true;
+    video.defaultMuted = true;
+    video.setAttribute('muted', '');
+    video.setAttribute('playsinline', '');
+    video.autoplay = true;
+    video.loop = true;
+    video.preload = 'auto';
+    video.className = 'h-full w-full';
+    video.style.cssText = 'object-fit:cover;object-position:center 35%';
+    container.appendChild(video);
+    const tryPlay = () => { if (video!.paused) video!.play().catch(() => {}); };
+    tryPlay();
+    video.addEventListener('canplay', tryPlay);
+    const events = ['touchstart', 'click', 'scroll'] as const;
+    events.forEach(ev => window.addEventListener(ev, tryPlay, { once: true, passive: true }));
+    return () => {
+      video!.removeEventListener('canplay', tryPlay);
+      events.forEach(ev => window.removeEventListener(ev, tryPlay));
+    };
+  }, []);
+
   return (
     <section id="home" className="relative min-h-screen flex items-center justify-center overflow-hidden bg-[#2D1B0E]">
-      <div className="absolute inset-0 h-full w-full overflow-hidden" aria-hidden="true" style={{ transform: `translate3d(0, ${scrollY * 0.12}px, 0)`, willChange: 'transform' }}>
-        <video
-          className="h-full w-full"
-          style={{ objectFit: 'cover', objectPosition: 'center 35%' }}
-          src={HERO_VIDEO}
-          poster={HERO_COVER}
-          autoPlay
-          muted
-          loop
-          playsInline
-          preload="none"
-        />
-      </div>
+      <div ref={videoContainerRef} className="absolute inset-0 h-full w-full overflow-hidden bg-cover" aria-hidden="true" style={{ backgroundImage: `url(${HERO_COVER})`, backgroundPosition: 'center 35%', transform: `translate3d(0, ${scrollY * 0.12}px, 0)`, willChange: 'transform' }} />
       <div className="absolute inset-0 bg-gradient-to-b from-[#2D1B0E]/30 via-[#2D1B0E]/20 to-[#2D1B0E]/55" />
 
       <div className="relative z-10 text-center px-4 max-w-4xl mx-auto">
@@ -115,7 +140,7 @@ function MenuCTA() {
         </a>
         <div className="mt-10 flex flex-wrap justify-center gap-5 text-[#F5E6D0]/60 text-sm">
           <span>Tacos</span><span>Quesadillas</span><span>Appetizers</span>
-          <span>Specialties</span><span>Salads</span><span>Desserts</span><span>Drinks</span>
+          <span>Burritos</span><span>Salads</span><span>Desserts</span><span>Drinks</span>
         </div>
       </div>
     </section>
@@ -332,8 +357,26 @@ function Reservation() {
   const [sending, setSending] = useState(false);
   const [error, setError] = useState('');
 
+  // 00:00 and 00:30 belong to the night of the selected date, not the morning.
+  const isLateNight = form.time.startsWith('00');
+  const isLargeGroup = form.size === '10+';
+  const prettyDate = form.date
+    ? new Date(`${form.date}T12:00`).toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' })
+    : '';
+  const timeLabel = isLateNight ? `${form.time} (late night, after the evening of ${prettyDate})` : form.time;
+
+  const whatsappGroupText = [
+    "Hi, I'd like to book a table at Taco Fiesta for a group of more than 10.",
+    form.name && `Name: ${form.name}`,
+    prettyDate && `Date: ${prettyDate}`,
+    form.time && `Time: ${timeLabel}`,
+    form.notes && `Notes: ${form.notes}`,
+  ].filter(Boolean).join('\n');
+  const whatsappGroupUrl = `https://wa.me/355689797777?text=${encodeURIComponent(whatsappGroupText)}`;
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isLargeGroup) return;
     if (!form.name || !form.phone || !form.date || !form.time || !form.size) {
       setError('Please fill in all required fields.');
       return;
@@ -347,7 +390,7 @@ function Reservation() {
         name: form.name,
         phone: form.phone,
         date: form.date,
-        time: form.time,
+        time: timeLabel,
         guests: form.size,
         notes: form.notes || '—',
       });
@@ -384,7 +427,7 @@ function Reservation() {
                   </svg>
                 </div>
                 <h3 className="text-[#FFF8F0] font-bold text-lg mb-2" style={{ fontFamily: 'Poppins, sans-serif' }} role="status">Request received!</h3>
-                <p className="text-[#F5E6D0]/60 text-sm">We'll confirm your reservation for {form.size} {parseInt(form.size) === 1 ? 'person' : 'people'} on {form.date} at {form.time}.</p>
+                <p className="text-[#F5E6D0]/60 text-sm">We'll confirm your reservation for {form.size} {parseInt(form.size) === 1 ? 'person' : 'people'} on {prettyDate} at {timeLabel}.</p>
                 <button onClick={() => { setSubmitted(false); setForm({ name: '', phone: '', date: '', time: '', size: '', notes: '' }); }} className="mt-5 text-[#E8A838] text-sm font-medium hover:underline">
                   Make another reservation
                 </button>
@@ -404,13 +447,13 @@ function Reservation() {
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                   <div>
                     <label htmlFor="res-date" className="block text-xs font-semibold text-[#F5E6D0]/60 uppercase tracking-wider mb-1.5">Date *</label>
-                    <input id="res-date" type="date" value={form.date} min={new Date().toISOString().split('T')[0]} onChange={e => setForm(f => ({ ...f, date: e.target.value }))} className={inputClass} />
+                    <input id="res-date" type="date" value={form.date} min={new Date().toLocaleDateString('en-CA')} onChange={e => setForm(f => ({ ...f, date: e.target.value }))} className={inputClass} />
                   </div>
                   <div>
                     <label htmlFor="res-time" className="block text-xs font-semibold text-[#F5E6D0]/60 uppercase tracking-wider mb-1.5">Time *</label>
                     <select id="res-time" value={form.time} onChange={e => setForm(f => ({ ...f, time: e.target.value }))} className={inputClass}>
                       <option value="">Time</option>
-                      {timeSlots.map(t => <option key={t} value={t}>{t}</option>)}
+                      {timeSlots.map(t => <option key={t} value={t}>{t.startsWith('00') ? `${t} (late night)` : t}</option>)}
                     </select>
                   </div>
                   <div>
@@ -422,14 +465,28 @@ function Reservation() {
                     </select>
                   </div>
                 </div>
+                {isLateNight && prettyDate && (
+                  <p className="text-[#F5E6D0]/60 text-xs -mt-1">
+                    {form.time} is late night: just after midnight at the end of {prettyDate}.
+                  </p>
+                )}
                 <div>
                   <label htmlFor="res-notes" className="block text-xs font-semibold text-[#F5E6D0]/60 uppercase tracking-wider mb-1.5">Special requests</label>
                   <textarea id="res-notes" value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} placeholder="Allergies, celebrations, seating preferences..." rows={3} className={`${inputClass} resize-none`} />
                 </div>
                 {error && <p role="alert" className="text-red-400 text-xs">{error}</p>}
-                <button type="submit" disabled={sending} className="w-full bg-[#C4532B] hover:bg-[#A3421F] disabled:opacity-60 text-white py-3 rounded-lg text-sm font-semibold transition-colors">
-                  {sending ? 'Sending...' : 'Request Reservation'}
-                </button>
+                {isLargeGroup ? (
+                  <div className="space-y-3">
+                    <p className="text-[#F5E6D0]/60 text-xs">For groups larger than 10, message us on WhatsApp so we can arrange the seating.</p>
+                    <a href={whatsappGroupUrl} target="_blank" rel="noopener noreferrer" className="block w-full text-center bg-[#C4532B] hover:bg-[#A3421F] text-white py-3 rounded-lg text-sm font-semibold transition-colors">
+                      Continue on WhatsApp
+                    </a>
+                  </div>
+                ) : (
+                  <button type="submit" disabled={sending} className="w-full bg-[#C4532B] hover:bg-[#A3421F] disabled:opacity-60 text-white py-3 rounded-lg text-sm font-semibold transition-colors">
+                    {sending ? 'Sending...' : 'Request Reservation'}
+                  </button>
+                )}
               </form>
             )}
           </div>
@@ -441,33 +498,33 @@ function Reservation() {
 
 /* ───────── REVIEWS ───────── */
 const reviews = [
-  { name: 'Kymberly Traveler', date: '8 months ago', stars: 5, wide: true,
+  { name: 'Kymberly Traveler', stars: 5, wide: true,
     text: 'Delicious authentic Mexican food. I had juicy shredded beef tacos. The meat was flavorful, seasoned well and moist. The staff were friendly and the food is all delicious. It\'s on the sea so you have the best view. Go at sunset for a wonderful dinner.' },
-  { name: 'Соломія Ільків', date: '10 months ago', stars: 5, wide: false,
+  { name: 'Соломія Ільків', stars: 5, wide: false,
     text: 'Sooo tasty, very comfortable, very good tacos and so friendly service. Guys are really good in their job.' },
-  { name: 'Doug Mitchell', date: '10 months ago', stars: 4, wide: false,
+  { name: 'Doug Mitchell', stars: 4, wide: false,
     text: 'Came across this place on a walk up Rruga Butrinti, pleasantly surprised. Had pork carnitas and pollo del fuego, very tasty with nice spicing on the meat. Salsa was good. A decent addition to Sarandë.' },
-  { name: 'Zdi Camebo', date: '10 months ago', stars: 5, wide: true,
+  { name: 'Zdi Camebo', stars: 5, wide: true,
     text: 'A perfect blend of ambiance, flavor, and service. Every dish was thoughtfully prepared with fresh ingredients and bold flavors. The staff was incredibly welcoming and made great recommendations. We left full, happy, and already planning our next visit!' },
-  { name: 'Jash Gada', date: '', stars: 5, wide: false,
+  { name: 'Jash Gada', stars: 5, wide: false,
     text: 'Wonderful food and one of the best cuisines to have in Sarande! Chefs and staff very friendly, must visit!' },
-  { name: 'Ilsa Capari', date: '', stars: 5, wide: true,
+  { name: 'Ilsa Capari', stars: 5, wide: true,
     text: 'Such a fun spot in Sarandë. It\'s so rare to find a good Mexican place in a Mediterranean beach city. I went with my friends from Switzerland after a beach day and they loved it. The tacos were full of flavor, everything tasted fresh, and the atmosphere was very warm. Perfect place to eat after the beach.' },
-  { name: 'Paula Dini', date: '', stars: 5, wide: false,
+  { name: 'Paula Dini', stars: 5, wide: false,
     text: 'Great food, friendly service, and a really nice vibe. The tacos were tasty and fresh, portions were good, and everything came out quickly. Casual, fun, and perfect for a relaxed meal with friends.' },
-  { name: 'Jasmine Kaur', date: '', stars: 5, wide: false,
+  { name: 'Jasmine Kaur', stars: 5, wide: false,
     text: 'Lovely service! Gave food even after closing time, great people.' },
-  { name: 'Amina Braimi', date: '', stars: 5, wide: true,
+  { name: 'Amina Braimi', stars: 5, wide: true,
     text: 'Wow, what great Mexican food! The waiter was super friendly and professional, almost no waiting time. It was so good we came back on our last night and ended with fantastic drinks. 10/10, highly recommended. It won\'t be the last time I visit Taco Fiesta!' },
-  { name: 'Roy Pijpker', date: '', stars: 5, wide: false,
+  { name: 'Roy Pijpker', stars: 5, wide: false,
     text: 'The food is delicious and the portions are generous and filling. My girlfriend and I both had the tacos, both were delicious.' },
-  { name: 'KayJay Schreefel', date: '', stars: 5, wide: false,
+  { name: 'KayJay Schreefel', stars: 5, wide: false,
     text: 'The food was delicious and the service was excellent. Friendly staff and food was ready quickly. You also have a view of the sea if you sit at the front.' },
-  { name: 'Burkay Sener', date: '', stars: 5, wide: true,
+  { name: 'Burkay Sener', stars: 5, wide: true,
     text: 'Great shrimp tacos. Fantastic atmosphere with a great ocean view and very well decorated. The service was exceptionally good — we were served by Klevi, a very cheerful guy who really knows how to treat guests. High praise.' },
-  { name: 'Jolanda Myftari', date: '', stars: 5, wide: true,
+  { name: 'Jolanda Myftari', stars: 5, wide: true,
     text: 'Taco Fiesta was a super pleasant surprise! The beef tacos and spicy salsa were top notch. Fast service, very friendly staff, and the warm colorful atmosphere puts you right in the Mexican mood. If you want something different and full of flavor, this is the place.' },
-  { name: 'Alex Gozdaris', date: '', stars: 5, wide: false,
+  { name: 'Alex Gozdaris', stars: 5, wide: false,
     text: 'Great atmosphere, great food and super tasty. Highly recommended.' },
 ];
 
@@ -527,7 +584,6 @@ function Reviews() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-[#FFF8F0] font-semibold text-sm">{r.name}</p>
-                  {r.date && <p className="text-[#F5E6D0]/60 text-xs mt-0.5">{r.date}</p>}
                 </div>
                 <svg viewBox="0 0 24 24" width="20" height="20" role="img" aria-label="Google review">
                   <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
@@ -561,7 +617,7 @@ function MapEmbed() {
         height="100%"
         style={{ border: 0 }}
         allowFullScreen
-        loading="eager"
+        loading="lazy"
         allow="fullscreen"
         title="Taco Fiesta Location"
       />
@@ -645,53 +701,15 @@ function Location() {
   );
 }
 
-/* ───────── FOOTER ───────── */
-function Footer() {
-  return (
-    <footer className="bg-[#1A1008] py-10">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-3 gap-4 mb-8">
-          <div>
-            <p className="text-[#F5E6D0]/60 text-xs uppercase tracking-widest mb-3">Links</p>
-            <div className="flex flex-col gap-2">
-              {[{ label: 'Home', href: '#home' }, { label: 'About', href: '#about' }, { label: 'Menu', href: '/menu' }, { label: 'Gallery', href: '#gallery' }, { label: 'Contact', href: '#contact' }].map((link) => (
-                <a key={link.label} href={link.href} onClick={link.href.startsWith('#') ? (e) => { e.preventDefault(); document.querySelector(link.href)?.scrollIntoView({ behavior: 'smooth' }); } : undefined} className="text-[#F5E6D0]/60 hover:text-[#F5E6D0] text-sm transition-colors w-fit">
-                  {link.label}
-                </a>
-              ))}
-            </div>
-          </div>
-          <div>
-            <p className="text-[#F5E6D0]/60 text-xs uppercase tracking-widest mb-3">Hours</p>
-            <p className="text-[#F5E6D0]/60 text-sm">Every day</p>
-            <p className="text-[#F5E6D0]/60 text-sm">11:00 AM – 1:00 AM</p>
-          </div>
-          <div>
-            <p className="text-[#F5E6D0]/60 text-xs uppercase tracking-widest mb-3">Location</p>
-            <p className="text-[#F5E6D0]/60 text-sm leading-relaxed">Butrinti Street<br />Saranda 9701, Albania</p>
-          </div>
-        </div>
-        <div className="border-t border-[#FFF8F0]/8 pt-6 flex items-center justify-between">
-          <p className="text-[#F5E6D0]/60 text-xs">&copy; {new Date().getFullYear()} Taco Fiesta Saranda</p>
-          <div className="flex items-center gap-3">
-            <a href="https://www.instagram.com/tacofiestasarande/" target="_blank" rel="noopener noreferrer" aria-label="Instagram" className="text-[#F5E6D0]/60 hover:text-[#F5E6D0]/60 transition-colors">
-              <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z"/></svg>
-            </a>
-            <a href="https://wa.me/355689797777" target="_blank" rel="noopener noreferrer" aria-label="WhatsApp" className="text-[#F5E6D0]/60 hover:text-[#F5E6D0]/60 transition-colors">
-              <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
-            </a>
-            <a href="https://www.tripadvisor.com/Restaurant_Review-g303165-d33303359-Reviews-Taco_Fiesta-Saranda_Vlore_County.html" target="_blank" rel="noopener noreferrer" aria-label="TripAdvisor" className="text-[#F5E6D0]/60 hover:text-[#F5E6D0]/60 transition-colors">
-              <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M12.006 4.295c-2.67 0-5.338.784-7.645 2.353H0l1.963 2.135a5.997 5.997 0 0 0 4.04 10.43 5.976 5.976 0 0 0 4.075-1.6L12 19.705l1.922-2.09a5.972 5.972 0 0 0 4.072 1.598 6 6 0 0 0 6-5.998 5.982 5.982 0 0 0-1.957-4.432L24 6.648h-4.35a13.573 13.573 0 0 0-7.644-2.353zM12 6.255c1.531 0 3.063.303 4.504.903C13.943 8.138 12 10.43 12 13.1c0-2.671-1.942-4.962-4.504-5.942A11.72 11.72 0 0 1 12 6.256zM6.002 9.157a4.059 4.059 0 1 1 0 8.118 4.059 4.059 0 0 1 0-8.118zm11.992.002a4.057 4.057 0 1 1 .003 8.115 4.057 4.057 0 0 1-.003-8.115zm-11.992 1.93a2.128 2.128 0 0 0 0 4.256 2.128 2.128 0 0 0 0-4.256zm11.992 0a2.128 2.128 0 0 0 0 4.256 2.128 2.128 0 0 0 0-4.256z"/></svg>
-            </a>
-          </div>
-        </div>
-      </div>
-    </footer>
-  );
-}
-
 /* ───────── MAIN PAGE ───────── */
 export default function Index() {
+  // Links like /#about from other pages arrive before React has rendered the
+  // sections, so the browser can't jump to them. Scroll once they exist.
+  useEffect(() => {
+    const { hash } = window.location;
+    if (hash.length > 1) document.getElementById(hash.slice(1))?.scrollIntoView();
+  }, []);
+
   return (
     <div className="min-h-screen">
       <Navbar />
