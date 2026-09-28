@@ -72,14 +72,16 @@ function Hero() {
     <section id="home" className="relative min-h-screen flex items-center justify-center overflow-hidden bg-[#2D1B0E]">
       <div ref={videoContainerRef} className="absolute inset-0 h-full w-full overflow-hidden bg-cover" aria-hidden="true" style={{ backgroundImage: `url(${HERO_COVER})`, backgroundPosition: 'center 35%', transform: `translate3d(0, ${scrollY * 0.12}px, 0)`, willChange: 'transform' }} />
       <div className="absolute inset-0 bg-gradient-to-b from-[#2D1B0E]/30 via-[#2D1B0E]/20 to-[#2D1B0E]/55" />
+      {/* Soft dark glow behind the headline so it stays readable over bright frames */}
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_60%_45%_at_50%_55%,rgba(45,27,14,0.6),transparent)]" aria-hidden="true" />
 
       <div className="relative z-10 text-center px-4 max-w-4xl mx-auto">
         <div className="animate-fade-in-up opacity-0" style={{ animationDelay: '0.2s', animationFillMode: 'forwards' }}>
           <img src={LOGO_IMAGE} alt="Taco Fiesta Logo" className="w-52 sm:w-64 md:w-80 mx-auto mb-6 drop-shadow-2xl" style={{ filter: 'sepia(0.55) brightness(1.05) saturate(1.4) hue-rotate(-10deg) drop-shadow(0 0 32px rgba(196, 83, 43, 0.45))' }} />
         </div>
         <div className="animate-fade-in-up opacity-0" style={{ animationDelay: '0.5s', animationFillMode: 'forwards' }}>
-          <p className="text-white/70 text-sm tracking-[0.25em] uppercase font-medium mb-5">Saranda, Albania</p>
-          <h1 className="text-2xl sm:text-3xl text-white/90 mb-10 max-w-xl mx-auto font-light">
+          <p className="text-white/85 text-sm tracking-[0.25em] uppercase font-medium mb-5" style={{ textShadow: '0 1px 8px rgba(0,0,0,0.6)' }}>Saranda, Albania</p>
+          <h1 className="text-2xl sm:text-3xl text-white mb-10 max-w-xl mx-auto font-normal" style={{ textShadow: '0 2px 16px rgba(0,0,0,0.6)' }}>
             Mexican food on the Ionian coast.
           </h1>
         </div>

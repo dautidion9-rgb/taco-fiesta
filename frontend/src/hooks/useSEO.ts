@@ -8,6 +8,8 @@ interface SEOOptions {
   canonicalPath?: string;
   jsonLd?: object;
   noindex?: boolean;
+  /** Path of the preview image for search results and link shares, e.g. '/og-menu.jpg' */
+  image?: string;
 }
 
 function upsertMeta(attr: 'name' | 'property', key: string, content: string) {
@@ -20,7 +22,7 @@ function upsertMeta(attr: 'name' | 'property', key: string, content: string) {
   el.setAttribute('content', content);
 }
 
-export function useSEO({ title, description, canonicalPath, jsonLd, noindex }: SEOOptions) {
+export function useSEO({ title, description, canonicalPath, jsonLd, noindex, image }: SEOOptions) {
   useEffect(() => {
     const prevTitle = document.title;
     document.title = title;
@@ -30,6 +32,13 @@ export function useSEO({ title, description, canonicalPath, jsonLd, noindex }: S
     upsertMeta('property', 'og:description', description);
     upsertMeta('name', 'twitter:title', title);
     upsertMeta('name', 'twitter:description', description);
+
+    const ogImage = document.querySelector<HTMLMetaElement>('meta[property="og:image"]');
+    const prevImage = ogImage?.getAttribute('content') ?? null;
+    if (image) {
+      upsertMeta('property', 'og:image', `${SITE_URL}${image}`);
+      upsertMeta('name', 'twitter:image', `${SITE_URL}${image}`);
+    }
 
     if (canonicalPath) {
       const url = `${SITE_URL}${canonicalPath}`;
@@ -64,6 +73,10 @@ export function useSEO({ title, description, canonicalPath, jsonLd, noindex }: S
       if (noindex && prevRobots !== null) {
         upsertMeta('name', 'robots', prevRobots);
       }
+      if (image && prevImage !== null) {
+        upsertMeta('property', 'og:image', prevImage);
+        upsertMeta('name', 'twitter:image', prevImage);
+      }
     };
-  }, [title, description, canonicalPath, jsonLd, noindex]);
+  }, [title, description, canonicalPath, jsonLd, noindex, image]);
 }

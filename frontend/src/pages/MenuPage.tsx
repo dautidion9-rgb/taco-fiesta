@@ -161,6 +161,7 @@ const menuJsonLd = {
   '@type': 'Menu',
   name: 'Taco Fiesta Saranda Menu',
   url: 'https://tacofiesta.al/menu',
+  image: 'https://tacofiesta.al/og-menu.jpg',
   inLanguage: 'en',
   hasMenuSection: allCategories.map((cat) => ({
     '@type': 'MenuSection',
@@ -184,6 +185,7 @@ export default function MenuPage() {
     description: 'Full menu at Taco Fiesta Saranda: beef, chicken, shrimp & barbacoa tacos, quesadillas, burritos, fajitas, salads, cocktails and more. Prices in Lek. Open daily 11AM–1AM.',
     canonicalPath: '/menu',
     jsonLd: menuJsonLd,
+    image: '/og-menu.jpg',
   });
 
   const [activeIdx, setActiveIdx] = useState(0);
@@ -301,7 +303,7 @@ export default function MenuPage() {
                   <div key={item.name} className="flex items-start justify-between gap-6">
                     <div className="flex-1">
                       <p className="text-[#2D1B0E] text-base font-semibold leading-snug">{item.name}</p>
-                      <p className="text-[#2D1B0E]/65 text-xs mt-1 leading-relaxed">{item.description}</p>
+                      <p className="text-[#2D1B0E]/70 text-sm mt-1 leading-relaxed">{item.description}</p>
                     </div>
                     <p className="text-[#C4532B] text-sm font-semibold flex-shrink-0 tabular-nums">{item.price}</p>
                   </div>

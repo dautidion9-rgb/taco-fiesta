@@ -1,0 +1,3 @@
+# Keep the logo out of Google Images so it isn't picked as a search-result thumbnail.
+/assets/logo.webp
+  X-Robots-Tag: noindex
